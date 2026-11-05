@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earthquake-Proof Buildings</title>
+<style>
+:root{
+  --bg:#f4f1ea; --panel:#fffdf8; --ink:#1d232a; --muted:#5f6b76; --line:#ddd5c6; --accent:#c8412e;
+  --c-sky:#dcebf5; --c-ground:#9a7b55; --c-ground-dark:#7a5f40; --c-grass:#6f9a4a;
+  --c-concrete:#cfcac1; --c-edge:#5d5a55; --c-window:#8fb8d6; --c-steel:#2f6ea8;
+  --c-danger:#c8412e; --c-warn:#c98a1a; --c-ok:#2f8a57; --c-wood:#9a6634; --c-brick:#b5523b;
+  --c-rock:#6e6a72; --c-water:#3f7f9f; --c-gold:#d8a635; --c-fire:#f08a24; --c-wall:#efe6d6;
+  --c-retro:#e07b1a; --c-plan:#cfe0c0; --c-rubber:#2b2b2b; --c-ink:#1d232a; --c-muted:#5f6b76;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161b; --panel:#1a2028; --ink:#e8e6e1; --muted:#9aa5ae; --line:#2c343e; --accent:#ff6b55;
+    --c-sky:#1c2a38; --c-ground:#5c4a35; --c-ground-dark:#46382a; --c-grass:#4c6b34;
+    --c-concrete:#8e8a84; --c-edge:#dcd7cf; --c-window:#5d87a6; --c-steel:#6fa8e0;
+    --c-danger:#ff6b55; --c-warn:#f0b23a; --c-ok:#4cc285; --c-wood:#c08850; --c-brick:#b5523b;
+    --c-rock:#4a4750; --c-water:#3f7896; --c-gold:#e6b84a; --c-fire:#ff9a3a; --c-wall:#2c2a27;
+    --c-retro:#ff9a3a; --c-plan:#2d3b28; --c-rubber:#111; --c-ink:#e8e6e1; --c-muted:#9aa5ae;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161b; --panel:#1a2028; --ink:#e8e6e1; --muted:#9aa5ae; --line:#2c343e; --accent:#ff6b55;
+  --c-sky:#1c2a38; --c-ground:#5c4a35; --c-ground-dark:#46382a; --c-grass:#4c6b34;
+  --c-concrete:#8e8a84; --c-edge:#dcd7cf; --c-window:#5d87a6; --c-steel:#6fa8e0;
+  --c-danger:#ff6b55; --c-warn:#f0b23a; --c-ok:#4cc285; --c-wood:#c08850; --c-brick:#b5523b;
+  --c-rock:#4a4750; --c-water:#3f7896; --c-gold:#e6b84a; --c-fire:#ff9a3a; --c-wall:#2c2a27;
+  --c-retro:#ff9a3a; --c-plan:#2d3b28; --c-rubber:#111; --c-ink:#e8e6e1; --c-muted:#9aa5ae;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{max-width:1180px;margin:0 auto;padding:28px 16px 8px}
+h1{margin:0 0 6px;font-size:clamp(26px,4vw,38px);letter-spacing:-.02em}
+header p{margin:0;color:var(--muted);max-width:760px}
+header p b{color:var(--ink)}
+.controls{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.controls .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;background:var(--accent);color:#fff}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+label{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+input[type=range]{width:140px;accent-color:var(--accent)}
+#strv{color:var(--ink);min-width:7.5em}
+#phase{font-weight:700;font-size:14px;min-width:13em}
+#phase.shake{color:var(--accent)}
+#seis{flex:1 1 220px;height:40px;min-width:180px;border-radius:6px;background:var(--panel);border:1px solid var(--line)}
+main{max-width:1180px;margin:0 auto;padding:18px 16px 40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,520px),1fr));gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.card canvas{display:block;width:100%;aspect-ratio:560/300;background:var(--c-sky)}
+.card .txt{padding:12px 16px 16px}
+.card h2{margin:0 0 6px;font-size:18px;display:flex;gap:10px;align-items:baseline}
+.card h2 span{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.card p{margin:4px 0;font-size:14.5px}
+.card p b{font-weight:650}
+.card .why{color:var(--muted)}
+.card.wide{grid-column:1/-1}
+footer{max-width:1180px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Earthquake-Proof Buildings</h1>
+  <p>The main rule of <b>aseismic</b> design: the building should <b>bend and absorb</b> the shaking instead of resisting it rigidly. Each panel shows the same earthquake hitting two buildings: <b>without</b> the technique on the left and <b>with</b> it on the right. Turn the strength down to see where each one starts to fail.</p>
+</header>
+<div class="controls"><div class="in">
+  <button id="go">▶ Start earthquake</button>
+  <button id="pause" class="ghost">Pause</button>
+  <label>Strength <input type="range" id="str" min="1" max="10" value="7"> <b id="strv"></b></label>
+  <label><input type="checkbox" id="loop" checked> Repeat</label>
+  <span id="phase"></span>
+  <canvas id="seis"></canvas>
+</div></div>
+<main id="cards"></main>
+<footer>Simple physics models (spring-and-damper sways), exaggerated so you can see the effect. Not to scale.</footer>
+
+<script>
+const TAU=Math.PI*2, W=560, H=300, HW=280, GY=255, F1=1.1, W0=TAU*F1, STEP=1/240;
+const QS=0.8, QL=7, CYCLE=12.5;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)), lerp=(a,b,t)=>a+(b-a)*t;
+const C={};
+const CV=['sky','ground','groundDark','grass','concrete','edge','window','steel','danger','warn','ok','wood','brick','rock','water','gold','fire','wall','retro','plan','rubber','ink','muted'];
+function readColors(){const cs=getComputedStyle(document.documentElement);CV.forEach(k=>C[k]=cs.getPropertyValue('--c-'+k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())).trim());}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readColors);
+
+/* ---------- ground motion ---------- */
+let T=0, playing=true, loop=true, strength=7;
+function env(t){const s=t-QS;if(s<0||s>QL)return 0;const x=Math.min(1,s/1.6,(QL-s)/1.6);return x*x*(3-2*x);}
+const amp=()=>strength*1.6;
+function gpos(t){return amp()*env(t)*(Math.sin(TAU*F1*t)+0.35*Math.sin(TAU*2.3*t+1));}
+const G={x:0,v:0,a:0,env:0,I:0,t:0};
+function updG(){const g0=gpos(T),g1=gpos(T-STEP),g2=gpos(T-2*STEP);G.x=g0;G.v=(g0-g1)/STEP;G.a=(g0-2*g1+g2)/(STEP*STEP);G.env=env(T);G.I=amp()*G.env;G.t=T;}
+
+/* ---------- physics helpers ---------- */
+function osc(s,dt,ag,w,z){const a=-w*w*s.u-2*z*w*s.v-ag;s.v+=a*dt;s.u+=s.v*dt;return a;}
+const S0=()=>({u:0,v:0,dmg:0,broke:false,bt:0,dir:1,u0:0});
+function sway(s,dt,ag,w,z,lim){
+  if(s.broke){s.bt+=dt;return;}
+  osc(s,dt,ag,w,z);
+  const r=Math.abs(s.u)/lim;
+  s.dmg=Math.max(s.dmg,clamp((r-.55)/.45,0,1));
+  if(r>1){s.broke=true;s.bt=0;s.dir=Math.sign(s.u)||1;s.u0=s.u;}
+}
+const statusOf=s=>s.broke?['Collapsed!',2]:s.dmg>.05?['Cracking',1]:['Standing',0];
+const stressOf=(s,lim)=>s.broke?1:Math.min(1,Math.abs(s.u)/lim);
+
+/* ---------- drawing helpers ---------- */
+function poly(c,pts,fill,stroke,lw){c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.lineWidth=lw||1;c.stroke();}}
+function seg(c,a,b,col,lw){c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.strokeStyle=col;c.lineWidth=lw||1;c.stroke();}
+function pline(c,pts,col,lw){c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.strokeStyle=col;c.lineWidth=lw||1;c.lineJoin='round';c.stroke();}
+function half(c,side,fn){c.save();c.translate(side*HW,0);c.beginPath();c.rect(0,0,HW,H);c.clip();c.fillStyle=C.sky;c.fillRect(0,0,HW,H);fn();c.restore();}
+function ground(c,gx,y=GY){
+  c.fillStyle=C.ground;c.fillRect(0,y,HW,H-y);
+  c.fillStyle=C.grass;c.fillRect(0,y,HW,4);
+  c.fillStyle=C.groundDark;
+  for(let i=-1;i<15;i++)c.fillRect(i*22+gx+(i%2)*8,y+12+(((i%3)+3)%3)*10,9,3);
+}
+function tag(c,title,st,stress,extra){
+  c.font='700 10.5px system-ui,sans-serif';c.textAlign='left';c.textBaseline='alphabetic';
+  c.fillStyle=C.muted;c.fillText(title.toUpperCase(),12,19);
+  if(st){
+    c.font='700 12px system-ui,sans-serif';
+    const w=c.measureText(st[0]).width+16;
+    c.fillStyle=[C.ok,C.warn,C.danger][st[1]];
+    c.beginPath();c.roundRect(12,26,w,20,10);c.fill();
+    c.fillStyle='#fff';c.fillText(st[0],20,40);
+  }
+  if(stress!=null){
+    const x=HW-84;
+    c.font='600 9.5px system-ui,sans-serif';c.fillStyle=C.muted;c.fillText('STRESS',x,19);
+    c.fillStyle='rgba(127,127,127,.25)';c.fillRect(x,25,72,7);
+    c.fillStyle=stress<.55?C.ok:stress<.85?C.warn:C.danger;c.fillRect(x,25,72*stress,7);
+  }
+  if(extra){c.font='600 10.5px system-ui,sans-serif';extra.forEach((t,i)=>{c.fillStyle=t[1]||C.muted;c.fillText(t[0],12,62+i*14);});}
+}
+function mkP(o){const n=o.n,p=o.p||1;return(fx,fy)=>[o.x+fx*o.w+o.u*Math.pow(Math.max(0,fy)/n,p),o.y-fy*o.fh];}
+function zig(c,pt,len,seed){c.beginPath();c.moveTo(pt[0],pt[1]-len/2);for(let k=1;k<=4;k++)c.lineTo(pt[0]+(k%2?1:-1)*len*.22*(1+Math.sin(seed+k)*.4),pt[1]-len/2+k*len/4);c.strokeStyle=C.danger;c.lineWidth=1.8;c.stroke();}
+function frame(c,o){
+  const P=mkP(o),n=o.n,ec=o.edge||C.edge,lw=o.lw||3;
+  for(let i=0;i<n;i++){
+    poly(c,[P(-.5,i),P(.5,i),P(.5,i+1),P(-.5,i+1)],o.fill||C.concrete);
+    if(o.win!==0){const k=o.win||3;for(let j=0;j<k;j++){const a=-.5+(j+.5)/k,hw=.3/k;poly(c,[P(a-hw,i+.28),P(a+hw,i+.28),P(a+hw,i+.72),P(a-hw,i+.72)],C.window);}}
+  }
+  if(o.braces)for(let i=0;i<n;i++){seg(c,P(-.5,i),P(.5,i+1),o.braceCol||C.steel,o.braceW||3);seg(c,P(.5,i),P(-.5,i+1),o.braceCol||C.steel,o.braceW||3);}
+  for(const fx of[-.5,.5]){const pts=[];for(let f=0;f<=n+1e-6;f+=.25)pts.push(P(fx,f));pline(c,pts,ec,lw);}
+  for(let i=1;i<=n;i++)seg(c,P(-.5,i),P(.5,i),ec,lw*.8);
+  seg(c,P(-.5,0),P(.5,0),ec,lw);
+  if(o.crack>0)for(let i=0;i<Math.min(n,3);i++)for(const fx of[-.4,.4])zig(c,P(fx,i+.5),o.crack*16,i*7+fx*10);
+  return P;
+}
+function collapse(c,o,s){
+  const t=s.bt,n=o.n,p=Math.min(1,t/.9),e=p*p,dir=s.dir;
+  if(t<3.5){const a=.4*(1-t/3.5);c.fillStyle=`rgba(150,140,125,${a})`;for(let k=0;k<6;k++){c.beginPath();c.arc(o.x+(k-2.5)*o.w*.3+dir*t*10,o.y-12-Math.abs(Math.sin(k))*14,14+t*20+k*2,0,TAU);c.fill();}}
+  for(let i=n;i>=1;i--){
+    const x=lerp(o.x+s.u0*Math.pow(i/n,o.p||1)*(o.scale||1),o.x+dir*i*7,e),y=lerp(o.y-i*o.fh,o.y-i*7,e);
+    c.save();c.translate(x,y);c.rotate(e*dir*.14*Math.sin(i*2.7+1));
+    c.fillStyle=o.fill||C.concrete;c.fillRect(-o.w/2,-3,o.w,7);c.strokeStyle=o.edge||C.edge;c.lineWidth=1.5;c.strokeRect(-o.w/2,-3,o.w,7);c.restore();
+  }
+  if(p>=1)for(let k=0;k<9;k++){c.fillStyle=k%2?C.concrete:C.edge;c.fillRect(o.x+dir*n*4+(k-4.5)*o.w*.13,o.y-5-(k%3)*3,6+(k%4)*2,5);}
+}
+function swaySide(c,s,lim,o,title,G){
+  ground(c,G.x);
+  if(s.broke)collapse(c,o,s);else frame(c,{...o,crack:s.dmg});
+  tag(c,title,statusOf(s),stressOf(s,lim));
+}
+
+/* ---------- the cards ---------- */
+const CARDS=[
+{title:'Base isolation',how:'The building sits on rubber-and-steel pads or rollers instead of being fixed to the ground.',why:'The ground moves underneath, but much less of the shaking reaches the building, a bit like a car’s suspension.',
+ init:()=>({L:S0(),R:{...S0(),b:0,bv:0}}),
+ step(s,dt,G){
+   sway(s.L,dt,G.a,W0,.04,42);
+   const R=s.R,wi=TAU*.3,zi=.2,ba=-wi*wi*R.b-2*zi*wi*R.bv-G.a;R.bv+=ba*dt;R.b+=R.bv*dt;
+   sway(R,dt,G.a+ba,W0,.04,42);
+ },
+ draw(c,s,G){
+   half(c,0,()=>{
+     swaySide(c,s.L,42,{x:HW/2+G.x,y:GY,w:100,n:4,fh:34,u:s.L.u},'Fixed to the ground',G);
+   });
+   half(c,1,()=>{
+     ground(c,G.x);
+     const gx=HW/2+G.x,bx=gx+s.R.b,top=GY-16;
+     c.fillStyle=C.groundDark;c.fillRect(gx-66,GY,132,6);
+     for(const k of[-.38,0,.38]){
+       const b=gx+k*100,t=bx+k*100;
+       poly(c,[[b-10,GY],[b+10,GY],[t+10,top],[t-10,top]],C.rubber);
+       for(let j=1;j<4;j++){const f=j/4;seg(c,[lerp(b,t,f)-10,GY-16*f],[lerp(b,t,f)+10,GY-16*f],'#9aa3ad',1.5);}
+     }
+     c.fillStyle=C.edge;c.fillRect(bx-56,top-6,112,6);
+     const o={x:bx,y:top-6,w:100,n:4,fh:34,u:s.R.u};
+     if(s.R.broke)collapse(c,o,s.R);else frame(c,{...o,crack:s.R.dmg});
+     c.font='600 10px system-ui';c.fillStyle=C.muted;c.textAlign='center';c.fillText('rubber + steel pads',gx,GY+30);
+     tag(c,'With base isolation',statusOf(s.R),stressOf(s.R,42));
+   });
+ }},
+
+{title:'Counterweight (tuned mass damper)',how:'A huge weight hangs near the top of a skyscraper and swings the opposite way to the building.',why:'It cancels out the sway. Taipei 101 has a 660-tonne steel ball.',
+ init:()=>({L:S0(),R:{...S0(),p:0,pv:0}}),
+ step(s,dt,G){
+   osc(s.L,dt,G.a,W0,.02);
+   const R=s.R,mu=.1,wd=W0/(1+mu),zd=.18,fd=wd*wd*R.p+2*zd*wd*R.pv;
+   const ua=-W0*W0*R.u-2*.02*W0*R.v+mu*fd-G.a,pa=-fd-(ua+G.a);
+   R.v+=ua*dt;R.u+=R.v*dt;R.pv+=pa*dt;R.p+=R.pv*dt;
+ },
+ draw(c,s,G){
+   const lim=90,st=u=>{const r=Math.abs(u)/lim;return r>.8?['Swaying dangerously',2]:r>.4?['Swaying a lot',1]:['Steady',0];};
+   for(const side of[0,1])half(c,side,()=>{
+     const S=side?s.R:s.L;ground(c,G.x);
+     const o={x:HW/2+G.x,y:GY,w:54,n:14,fh:13,u:S.u*.6,p:1.6,win:2};
+     const P=frame(c,o);
+     if(side){
+       poly(c,[P(-.42,12.1),P(.42,12.1),P(.42,13.7),P(-.42,13.7)],'rgba(20,20,20,.55)');
+       const a=P(0,13.6),bx=a[0]+clamp(S.p*.6,-20,20),by=a[1]+17;
+       seg(c,P(-.3,13.6),[bx,by],C.edge,1);seg(c,P(.3,13.6),[bx,by],C.edge,1);
+       c.beginPath();c.arc(bx,by,8,0,TAU);c.fillStyle=C.gold;c.fill();c.strokeStyle='#7a5a10';c.lineWidth=1.5;c.stroke();
+       c.font='600 10px system-ui';c.fillStyle=C.muted;c.textAlign='left';c.fillText('← heavy ball swings',HW/2+48+G.x,by+4);
+       c.fillText('   against the sway',HW/2+48+G.x,by+17);
+     }
+     tag(c,side?'With a tuned mass damper':'No counterweight',st(S.u),Math.min(1,Math.abs(S.u)/lim));
+   });
+ }},
+
+{title:'Shock absorbers (dampers)',how:'Hydraulic cylinders are built into the frame.',why:'They soak up the energy of the shaking, like shock absorbers on a bike.',
+ init:()=>({L:S0(),R:{...S0(),E:0}}),
+ step(s,dt,G){sway(s.L,dt,G.a,W0,.02,48);sway(s.R,dt,G.a,W0,.3,48);if(!s.R.broke)s.R.E+=2*.3*W0*s.R.v*s.R.v*dt;},
+ draw(c,s,G){
+   half(c,0,()=>{
+     const keep=!s.L.broke&&G.env<.02&&Math.abs(s.L.u)>4&&T>QS+1;
+     swaySide(c,s.L,48,{x:HW/2+G.x,y:GY,w:110,n:5,fh:32,u:s.L.u,win:3},'No dampers',G);
+     if(keep){c.font='600 10.5px system-ui';c.fillStyle=C.warn;c.fillText('Still swaying after the quake…',12,62);}
+   });
+   half(c,1,()=>{
+     ground(c,G.x);const S=s.R;
+     const o={x:HW/2+G.x,y:GY,w:110,n:5,fh:32,u:S.u,win:2};
+     if(S.broke){collapse(c,o,S);}else{
+       const P=frame(c,{...o,crack:S.dmg});
+       const rest=Math.hypot(.84*110,.8*32),heat=clamp(Math.abs(S.v)/110,0,1);
+       for(let i=0;i<5;i++){
+         const a=P(-.42,i+.1),b=P(.42,i+.9),dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,cl=rest*.56;
+         const ce=[a[0]+ux*cl,a[1]+uy*cl],re=[b[0]-ux*cl,b[1]-uy*cl];
+         seg(c,re,b,'#c9d1d8',2.5);
+         seg(c,a,ce,C.steel,7);
+         if(heat>.05)seg(c,a,ce,`rgba(240,120,30,${heat*.85})`,7);
+         seg(c,[re[0]-uy*4,re[1]+ux*4],[re[0]+uy*4,re[1]-ux*4],'#222',2);
+       }
+     }
+     const pct=Math.min(1,S.E/9000);
+     tag(c,'With hydraulic dampers',statusOf(S),stressOf(S,48),[['Energy soaked up:',C.muted]]);
+     c.fillStyle='rgba(127,127,127,.25)';c.fillRect(110,54,90,8);c.fillStyle=C.fire;c.fillRect(110,54,90*pct,8);
+   });
+ }},
+
+{title:'Cross-bracing',how:'Diagonal steel beams in an X shape across the walls.',why:'They stop the frame twisting or folding sideways.',
+ init:()=>({L:S0(),R:S0()}),
+ step(s,dt,G){sway(s.L,dt,G.a,W0,.04,40);sway(s.R,dt,G.a,TAU*3.4,.06,40);},
+ draw(c,s,G){
+   const o={y:GY,w:120,n:3,fh:46,win:0,fill:'rgba(160,150,135,.28)',lw:5};
+   half(c,0,()=>swaySide(c,s.L,40,{...o,x:HW/2+G.x,u:s.L.u},'Open frame',G));
+   half(c,1,()=>swaySide(c,s.R,40,{...o,x:HW/2+G.x,u:s.R.u,braces:true,braceW:3.5},'With X-bracing',G));
+ }},
+
+{title:'Steel-reinforced concrete',how:'Steel bars run inside the concrete.',why:'Concrete alone is brittle, and the steel lets it bend without snapping.',
+ init:()=>({L:S0(),R:S0()}),
+ step(s,dt,G){sway(s.L,dt,G.a,W0,.05,26);osc(s.R,dt,G.a,W0,.12);},
+ draw(c,s,G){
+   const h=150,wd=24;
+   const shape=(cx,u,f0,f1)=>{const P=(fx,fy)=>[cx+fx*wd+u*fy*fy,GY-fy*h],l=[],r=[];for(let f=f0;f<=f1+1e-6;f+=.05){l.push(P(-.5,f));r.unshift(P(.5,f));}return{P,pts:l.concat(r)};};
+   const slab=(P)=>{const t=P(0,1);c.fillStyle=C.concrete;c.fillRect(t[0]-40,t[1]-12,80,12);c.strokeStyle=C.edge;c.lineWidth=1.5;c.strokeRect(t[0]-40,t[1]-12,80,12);};
+   half(c,0,()=>{
+     ground(c,G.x);const S=s.L,cx=HW/2+G.x;
+     if(!S.broke){
+       const {P,pts}=shape(cx,S.u,0,1);poly(c,pts,C.concrete,C.edge,1.5);slab(P);
+       if(S.dmg>0)for(let k=0;k<3;k++)zig(c,P(Math.sign(S.u)*-.25,.12+k*.07),S.dmg*12,k);
+     }else{
+       const fb=.3,{P,pts}=shape(cx,S.u0,0,fb);pts.splice(pts.length/2,0,P(.15,fb+.04),P(-.1,fb-.02));
+       poly(c,pts,C.concrete,C.edge,1.5);
+       const t=S.bt,th=S.dir*Math.min(Math.PI/2,2.2*t*t),dy=Math.min(h*fb-wd/2,140*t*t),pv=P(.5*S.dir,fb);
+       c.save();c.translate(pv[0],pv[1]+dy);c.rotate(th);
+       const x0=S.dir>0?-wd:0;c.fillStyle=C.concrete;c.strokeStyle=C.edge;c.lineWidth=1.5;
+       c.fillRect(x0,-h*(1-fb),wd,h*(1-fb));c.strokeRect(x0,-h*(1-fb),wd,h*(1-fb));
+       c.fillRect(x0+wd/2-40,-h*(1-fb)-12,80,12);c.strokeRect(x0+wd/2-40,-h*(1-fb)-12,80,12);c.restore();
+     }
+     tag(c,'Plain concrete',S.broke?['Snapped!',2]:S.dmg>.05?['Cracking',1]:['Standing',0],stressOf(S,26));
+   });
+   half(c,1,()=>{
+     ground(c,G.x);const S=s.R,cx=HW/2+G.x,{P,pts}=shape(cx,S.u,0,1);
+     poly(c,pts,C.concrete,C.edge,1.5);
+     poly(c,pts.map(p=>[p[0],p[1]]),'rgba(255,255,255,.12)');
+     for(const fx of[-.3,.3]){const l=[];for(let f=-.05;f<=1;f+=.05)l.push(P(fx,f));pline(c,l,'#8a4a2a',2.4);}
+     for(let f=.05;f<1;f+=.1)seg(c,P(-.32,f),P(.32,f),'#8a4a2a',1);
+     slab(P);
+     const cr=clamp((Math.abs(S.u)-26)/30,0,1);
+     if(cr>0)for(let k=0;k<3;k++){const p=P(Math.sign(S.u)*-.5,.1+k*.08);seg(c,p,[p[0]+Math.sign(S.u)*7*cr,p[1]+1],C.edge,1);}
+     c.font='600 10px system-ui';c.fillStyle=C.muted;c.textAlign='left';c.fillText('steel bars inside',cx+30,GY-40);
+     tag(c,'Steel-reinforced',['Bends, doesn’t snap',0],stressOf(S,60));
+   });
+ }},
+
+{title:'Flexible materials',how:'Steel and wood are used rather than brick or stone.',why:'These materials can flex, while brick and stone crack and crumble.',
+ init(){const b=[];for(let r=0;r<9;r++)for(let k=0;k<6;k++)b.push({r,k,att:true,x:0,y:0,vx:0,vy:0,a:0,va:0});return{b,fallen:0,R:S0()};},
+ step(s,dt,G){
+   const rate=Math.max(0,G.I-4.5)*.12;
+   for(const k of s.b){
+     if(k.att){
+       const above=k.r<8?s.b[(k.r+1)*6+k.k]:null;
+       if((!above||!above.att)&&Math.random()<rate*dt){k.att=false;s.fallen++;k.x=HW/2+G.x-48+k.k*16;k.y=GY-(k.r+1)*11;k.vx=G.v+(Math.random()-.5)*90;k.vy=-40*Math.random();k.va=(Math.random()-.5)*9;}
+     }else{
+       k.vy+=900*dt;k.x+=k.vx*dt;k.y+=k.vy*dt;k.a+=k.va*dt;
+       if(k.y>GY-10){k.y=GY-10;k.vy*=-.25;k.vx*=.7;k.va*=.5;k.a+=(Math.round(k.a/(Math.PI/2))*Math.PI/2-k.a)*.3;}
+     }
+   }
+   osc(s.R,dt,G.a,W0,.08);
+ },
+ draw(c,s,G){
+   half(c,0,()=>{
+     ground(c,G.x);
+     for(const k of s.b){
+       let x,y,a=0;
+       if(k.att){x=HW/2+G.x-48+k.k*16+(G.I>3?Math.sin(T*60+k.r*3+k.k)*.7:0);y=GY-(k.r+1)*11;}else{x=k.x;y=k.y;a=k.a;}
+       c.save();c.translate(x+8,y+5.5);c.rotate(a);c.fillStyle=(k.r+k.k)%2?C.brick:'#a24733';c.fillRect(-7.5,-5,15,10);c.strokeStyle='rgba(0,0,0,.25)';c.lineWidth=1;c.strokeRect(-7.5,-5,15,10);c.restore();
+     }
+     tag(c,'Brick',s.fallen===0?['Standing',0]:s.fallen<16?['Crumbling',1]:['Collapsed!',2],Math.min(1,G.I/8));
+   });
+   half(c,1,()=>{
+     ground(c,G.x);
+     frame(c,{x:HW/2+G.x,y:GY,w:96,n:3,fh:33,u:s.R.u*.55,p:1.3,win:2,fill:'#e6cfa8',edge:C.wood,lw:4.5});
+     tag(c,'Steel & timber frame',['Flexes, doesn’t break',0],Math.min(1,Math.abs(s.R.u)/160));
+   });
+ }},
+
+{title:'Deep foundations',how:'Piles are driven down to solid rock.',why:'They stop the building sinking where the ground turns to liquid (liquefaction).',
+ init:()=>({liq:0,sink:0,L:{u:0,v:0},R:{u:0,v:0}}),
+ step(s,dt,G){
+   if(G.I>4)s.liq=Math.min(1,s.liq+(G.I-4)*.03*dt);
+   s.sink=Math.min(55,s.sink+s.liq*s.liq*16*dt*(G.env>.05?1:.3));
+   osc(s.L,dt,G.a,W0,.15);osc(s.R,dt,G.a,W0,.15);
+ },
+ draw(c,s,G){
+   const SY=172,RY=242;
+   for(const side of[0,1])half(c,side,()=>{
+     const soil=()=>{
+       c.fillStyle=C.ground;c.fillRect(0,SY,HW,RY-SY);
+       c.fillStyle=C.groundDark;for(let i=0;i<40;i++)c.fillRect((i*37)%HW+G.x,SY+8+(i*13)%(RY-SY-12),3,3);
+       if(s.liq>0){c.fillStyle=C.water;c.globalAlpha=s.liq*.55;c.fillRect(0,SY,HW,RY-SY);c.globalAlpha=1;}
+     };
+     c.fillStyle=C.rock;c.fillRect(0,RY,HW,H-RY);
+     c.fillStyle='rgba(0,0,0,.18)';for(let i=0;i<10;i++)c.fillRect(i*30+G.x+6,RY+16+(i%3)*10,14,4);
+     soil();
+     const cx=HW/2+G.x,sink=side?0:s.sink,tilt=side?0:sink*.0045;
+     c.save();c.translate(cx,SY+sink);c.rotate(tilt);
+     c.fillStyle=C.edge;c.fillRect(-46,0,92,7);
+     frame(c,{x:0,y:0,w:84,n:3,fh:28,u:(side?s.R:s.L).u*.35,win:3});
+     c.restore();
+     c.globalAlpha=.78;soil();c.globalAlpha=1;
+     c.beginPath();c.moveTo(0,SY);for(let x=0;x<=HW;x+=6)c.lineTo(x,SY+Math.sin(x*.15+T*8)*s.liq*G.env*2.5);c.lineTo(HW,SY+4);c.lineTo(0,SY+4);c.fillStyle=C.grass;c.fill();
+     if(s.liq>.35)for(const bx of[35,245]){const a=Math.min(1,(s.liq-.35)*3);c.fillStyle=C.water;c.globalAlpha=a*.8;
+       c.beginPath();c.ellipse(bx+G.x,SY+1,12,4,0,0,TAU);c.fill();
+       if(G.env>.05)for(let k=0;k<4;k++){const ph=(T*1.5+k/4)%1;c.beginPath();c.arc(bx+G.x+Math.sin(k*2)*5,SY-ph*22,2.5,0,TAU);c.fill();}
+       c.globalAlpha=1;}
+     if(side){c.fillStyle=C.edge;for(const px of[-32,0,32]){c.fillRect(cx+px-4,SY+7,8,RY+10-SY-7);}}
+     c.font='600 10px system-ui';c.fillStyle='rgba(255,255,255,.85)';c.textAlign='right';
+     c.fillText(s.liq>.3?'sand turning to liquid':'waterlogged sand',HW-8,RY-8);c.fillText('solid rock',HW-8,RY+22);
+     c.textAlign='left';
+     const st=side?['Held up by piles',0]:s.sink<4?['Standing',0]:s.sink<30?['Sinking',1]:['Sunk & tilted',2];
+     tag(c,side?'Piles down to rock':'Shallow foundation',st,side?Math.min(.3,s.liq*.3):Math.min(1,s.sink/45));
+   });
+ }},
+
+{title:'Symmetrical, simple shape',how:'Square or round plans with an even spread of weight.',why:'Odd shapes twist unevenly and break at the corners.',
+ init:()=>({o:{u:0,v:0},crack:0,peak:0}),
+ step(s,dt,G){osc(s.o,dt,G.a,W0,.06);const th=Math.abs(s.o.u*.0035);s.peak=th;s.crack=Math.min(1,s.crack+Math.max(0,th-.07)*dt*8);},
+ draw(c,s,G){
+   for(const side of[0,1])half(c,side,()=>{
+     c.fillStyle=C.plan;c.fillRect(0,0,HW,H);
+     c.strokeStyle='rgba(127,127,127,.25)';c.lineWidth=1;
+     for(let x=-28;x<HW+28;x+=28){c.beginPath();c.moveTo(x+G.x,0);c.lineTo(x+G.x,H);c.stroke();}
+     for(let y=0;y<H;y+=28){c.beginPath();c.moveTo(0,y);c.lineTo(HW,y);c.stroke();}
+     const cx=HW/2+G.x+s.o.u*.35,cy=168;
+     c.save();c.translate(cx,cy);
+     if(!side){
+       const th=s.o.u*.0035;c.translate(-18,18);c.rotate(th);c.translate(18,-18);
+       const pts=[[-50,-50],[0,-50],[0,0],[50,0],[50,50],[-50,50]];
+       poly(c,pts,C.concrete,C.edge,2.5);
+       const r=clamp(Math.abs(th)/.12,0,1);
+       if(r>.1){const g=c.createRadialGradient(0,0,0,0,0,34);g.addColorStop(0,`rgba(220,50,30,${.6*r})`);g.addColorStop(1,'rgba(220,50,30,0)');c.fillStyle=g;c.beginPath();c.arc(0,0,34,0,TAU);c.fill();}
+       if(s.crack>0){c.beginPath();c.moveTo(0,0);const L=s.crack*48;for(let k=1;k<=6;k++){const f=k/6*L;c.lineTo(-f*.7+(k%2?4:-4),f*.7+(k%2?-3:3));}c.strokeStyle=C.danger;c.lineWidth=2;c.stroke();
+         c.beginPath();c.moveTo(0,0);for(let k=1;k<=4;k++){const f=k/4*L*.6;c.lineTo(-f+(k%2?3:-3),(k%2?3:-2));}c.stroke();}
+     }else{
+       poly(c,[[-46,-46],[46,-46],[46,46],[-46,46]],C.concrete,C.edge,2.5);
+     }
+     c.restore();
+     c.font='600 10px system-ui';c.fillStyle=C.muted;c.textAlign='center';c.fillText('⟷ shaking direction  ·  view from above',HW/2,H-12);c.textAlign='left';
+     const st=side?['Moves evenly',0]:s.crack>.25?['Corner cracking',2]:s.peak>.05?['Twisting',1]:['Standing',0];
+     tag(c,side?'Square plan':'L-shaped plan',st,side?Math.min(1,Math.abs(s.o.u)/250):Math.max(s.crack,Math.min(1,Math.abs(s.o.u*.0035)/.12)));
+   });
+ }},
+
+{title:'Shatterproof glass & fixed furniture',how:'Laminated windows, with heavy items bolted down.',why:'Fewer injuries from falling objects, which cause many casualties.',
+ init:()=>({lamp:[{a:0,v:0},{a:0,v:0}],glass:false,shards:[],tip:false,phi:0,pv:0,crack:false}),
+ step(s,dt,G){
+   for(const l of s.lamp){const acc=-(900/50)*Math.sin(l.a)-(G.a/50)*Math.cos(l.a)-.6*l.v;l.v+=acc*dt;l.a=clamp(l.a+l.v*dt,-1.2,1.2);}
+   if(G.I>5&&!s.glass){s.glass=true;for(let i=0;i<18;i++){const x=55+Math.random()*70,y=108+Math.random()*60;s.shards.push({x,y,vx:(Math.random()-.3)*70,vy:-Math.random()*40,a:0,va:(Math.random()-.5)*12,p:[[0,0],[6+Math.random()*8,2],[3,7+Math.random()*9]],land:false});}}
+   if(G.I>5)s.crack=true;
+   for(const sh of s.shards)if(!sh.land){sh.vy+=900*dt;sh.x+=sh.vx*dt;sh.y+=sh.vy*dt;sh.a+=sh.va*dt;if(sh.y>GY-6){sh.y=GY-6;sh.land=true;}}
+   if(G.I>6.5&&!s.tip&&Math.random()<dt*1.2){s.tip=true;s.phi=.03;}
+   if(s.tip&&s.phi<Math.PI/2){s.pv+=12*Math.sin(s.phi)*dt;s.phi=Math.min(Math.PI/2,s.phi+s.pv*dt);}
+ },
+ draw(c,s,G){
+   const shelf=(rot,bolted)=>{
+     c.save();c.translate(178,GY);c.rotate(-rot);
+     c.fillStyle=C.wood;c.fillRect(0,-112,44,112);c.fillStyle='rgba(0,0,0,.25)';c.fillRect(3,-109,38,106);
+     const cols=['#c8412e','#2f6ea8','#d8a635','#2f8a57','#7a4fa0'];
+     for(let r=0;r<4;r++){c.fillStyle=C.wood;c.fillRect(0,-112+r*28+25,44,3);for(let b=0;b<5;b++){c.fillStyle=cols[(b+r)%5];c.fillRect(5+b*7,-112+r*28+6+(b%2)*3,6,19-(b%2)*3);}}
+     c.restore();
+     if(bolted){c.fillStyle=C.steel;c.fillRect(184,GY-118,10,8);c.fillRect(208,GY-118,10,8);c.fillStyle='#fff';c.beginPath();c.arc(189,GY-114,1.6,0,TAU);c.arc(213,GY-114,1.6,0,TAU);c.fill();}
+   };
+   for(const side of[0,1])half(c,side,()=>{
+     ground(c,G.x);c.save();c.translate(G.x,0);
+     c.fillStyle=C.wall;c.fillRect(22,70,236,GY-70);
+     c.strokeStyle=C.edge;c.lineWidth=5;c.strokeRect(22,70,236,GY-70);
+     const wx=50,wy=104,ww=80,wh=68;
+     if(side||!s.glass){c.fillStyle=C.window;c.globalAlpha=.8;c.fillRect(wx,wy,ww,wh);c.globalAlpha=1;}
+     if(side&&s.crack){c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=1;const ox=93,oy=134;for(let k=0;k<9;k++){const a=k/9*TAU+.3;c.beginPath();c.moveTo(ox,oy);c.lineTo(ox+Math.cos(a)*44,oy+Math.sin(a)*44);c.stroke();}
+       c.save();c.beginPath();c.rect(wx,wy,ww,wh);c.clip();for(const r of[10,22]){c.beginPath();for(let k=0;k<=9;k++){const a=k/9*TAU+.3,rr=r*(1+(k%2)*.15);k?c.lineTo(ox+Math.cos(a)*rr,oy+Math.sin(a)*rr):c.moveTo(ox+Math.cos(a)*rr,oy+Math.sin(a)*rr);}c.stroke();}c.restore();}
+     c.strokeStyle=C.edge;c.lineWidth=3;c.strokeRect(wx,wy,ww,wh);
+     if(!side)for(const sh of s.shards){c.save();c.translate(sh.x,sh.y);c.rotate(sh.a);poly(c,sh.p,'rgba(170,215,240,.9)','rgba(255,255,255,.9)',1);c.restore();}
+     const l=s.lamp[side],lx=140+Math.sin(l.a)*50,ly=70+Math.cos(l.a)*50;
+     seg(c,[140,70],[lx,ly],C.edge,1.5);c.beginPath();c.moveTo(lx-10,ly+8);c.lineTo(lx+10,ly+8);c.lineTo(lx+4,ly);c.lineTo(lx-4,ly);c.closePath();c.fillStyle=C.gold;c.fill();
+     const rock=G.I>3?.03*G.env*Math.sin(T*18):0;
+     if(side)shelf(0,true);else shelf(s.tip?s.phi:Math.max(0,rock),false);
+     c.restore();
+     const st=side?['Glass held, shelf bolted',0]:(s.glass||s.tip)?['Falling glass & furniture!',2]:['OK so far',0];
+     tag(c,side?'Laminated glass + bolts':'Ordinary glass, loose shelf',st,null);
+   });
+ }},
+
+{title:'Automatic shut-offs',how:'Gas and electricity cut off when shaking is detected.',why:'They prevent fires, a major secondary effect, as in Kobe in 1995.',
+ init:()=>({L:{broke:false,bt:0,fire:0},R:{broke:false,bt:0,off:false}}),
+ step(s,dt,G){
+   for(const S of[s.L,s.R]){if(G.I>5.5)S.broke=true;if(S.broke)S.bt+=dt;}
+   if(G.I>1.5)s.R.off=true;
+   if(s.L.broke&&s.L.bt>1.2)s.L.fire=Math.min(1,s.L.fire+dt*.22);
+ },
+ draw(c,s,G){
+   for(const side of[0,1])half(c,side,()=>{
+     const S=side?s.R:s.L,off=side&&s.R.off,power=!off;
+     ground(c,G.x);c.save();c.translate(G.x,0);
+     c.strokeStyle=C.wood;c.lineWidth=5;c.beginPath();c.moveTo(26,GY);c.lineTo(26,GY-135);c.stroke();c.lineWidth=3;c.beginPath();c.moveTo(16,GY-128);c.lineTo(36,GY-128);c.stroke();
+     c.strokeStyle=C.ink;c.lineWidth=1.5;c.beginPath();c.moveTo(30,GY-128);c.quadraticCurveTo(52,GY-96,70,GY-88);c.stroke();
+     if(off){c.strokeStyle=C.wall;c.lineWidth=4;c.beginPath();c.moveTo(48,GY-104);c.lineTo(56,GY-98);c.stroke();c.fillStyle=C.danger;c.font='700 10px system-ui';c.fillText('✕',47,GY-102);}
+     poly(c,[[70,GY],[210,GY],[210,GY-88],[70,GY-88]],C.wall,C.edge,3);
+     poly(c,[[60,GY-88],[220,GY-88],[140,GY-128]],C.brick,C.edge,2);
+     if(power){const g=c.createRadialGradient(140,GY-66,0,140,GY-66,40);g.addColorStop(0,'rgba(255,220,120,.85)');g.addColorStop(1,'rgba(255,220,120,0)');c.fillStyle=g;c.beginPath();c.arc(140,GY-66,40,0,TAU);c.fill();}
+     c.beginPath();c.arc(140,GY-70,5,0,TAU);c.fillStyle=power?'#ffd76a':'#777';c.fill();seg(c,[140,GY-88],[140,GY-75],C.edge,1.5);
+     c.fillStyle=C.edge;c.fillRect(172,GY-26,28,26);c.fillStyle='#555';c.fillRect(176,GY-30,8,4);c.fillRect(188,GY-30,8,4);
+     const pipe='#d6b12a',bx=236,dx=S.broke?6:0;
+     c.strokeStyle=pipe;c.lineWidth=5;c.lineJoin='miter';
+     c.beginPath();c.moveTo(HW+10,GY+18);c.lineTo(bx,GY+18);c.lineTo(bx,GY+2);c.stroke();
+     c.beginPath();c.moveTo(bx+dx,GY-4);c.lineTo(bx+dx,GY-14);c.lineTo(200,GY-14);c.stroke();
+     if(side){c.fillStyle=off?C.danger:C.ok;c.fillRect(bx-7+dx,GY-44,14,14);c.fillStyle='#fff';c.font='700 9px system-ui';c.textAlign='center';c.fillText(off?'OFF':'ON',bx+dx,GY-49);c.strokeStyle=C.edge;c.lineWidth=5;c.beginPath();c.moveTo(bx+dx,GY-30);c.lineTo(bx+dx,GY-14);c.stroke();c.textAlign='left';
+       c.fillStyle=off?C.danger:C.steel;c.fillRect(76,GY-46,16,12);c.fillStyle=C.muted;c.font='600 9px system-ui';c.fillText('sensor',72,GY-50);
+       if(off&&G.env>.02&&Math.floor(T*4)%2){c.strokeStyle=C.danger;c.lineWidth=1.5;c.beginPath();c.arc(84,GY-40,12,0,TAU);c.stroke();}}
+     const gas=S.broke&&!off;
+     if(gas)for(let k=0;k<9;k++){const ph=(T*.6+k/9)%1;c.fillStyle=`rgba(170,210,120,${(1-ph)*.45})`;c.beginPath();c.arc(bx+Math.sin(k*3+ph*6)*10-ph*25,GY-2-ph*70,4+ph*12,0,TAU);c.fill();}
+     if(!side&&S.broke&&S.bt>.9&&S.bt<1.4){c.fillStyle='#fff6a0';c.beginPath();for(let k=0;k<10;k++){const a=k/10*TAU,r=k%2?4:12;c.lineTo(70+Math.cos(a)*r,GY-88+Math.sin(a)*r);}c.fill();}
+     if(!side&&S.fire>0){
+       const f=S.fire;
+       for(let k=0;k<5;k++){const ph=(T*.4+k/5)%1;c.fillStyle=`rgba(60,60,60,${(1-ph)*.5*f})`;c.beginPath();c.arc(150+k*14+ph*20,GY-90-ph*120*f,10+ph*25,0,TAU);c.fill();}
+       for(let k=0;k<11;k++){const x=118+k*13,hh=f*(30+40*Math.abs(Math.sin(k*1.9)))*(0.75+.25*Math.sin(T*11+k*2.3));
+         c.beginPath();c.moveTo(x-9,GY);c.quadraticCurveTo(x-8,GY-hh*.5,x+Math.sin(T*7+k)*4,GY-hh);c.quadraticCurveTo(x+8,GY-hh*.5,x+9,GY);c.fillStyle=k%2?C.fire:'#ffcf3a';c.globalAlpha=.9;c.fill();c.globalAlpha=1;}
+     }
+     c.restore();
+     const st=side?(off?['Gas & power cut — no fire',0]:['Sensor watching',0]):S.fire>.05?['Fire!',2]:S.broke?['Gas leaking',2]:['OK so far',0];
+     tag(c,side?'With automatic shut-off':'No shut-off',st,null);
+   });
+ }},
+
+{title:'Retrofitting older buildings',how:'You can add strength to an existing building later: adding steel braces, wrapping concrete columns in steel or carbon fibre, and bolting the house to its foundations.',why:'An old building that would have collapsed becomes stiff and tied down enough to ride out the shaking.',
+ init:()=>({L:S0(),R:S0()}),
+ step(s,dt,G){sway(s.L,dt,G.a,W0,.04,40);sway(s.R,dt,G.a,TAU*3.4,.08,40);},
+ draw(c,s,G){
+   const o={y:GY-6,w:108,n:4,fh:34,win:3};
+   const base=()=>{c.fillStyle=C.edge;c.fillRect(HW/2+G.x-62,GY-6,124,6);};
+   half(c,0,()=>{ground(c,G.x);base();const oo={...o,x:HW/2+G.x,u:s.L.u};if(s.L.broke)collapse(c,oo,s.L);else frame(c,{...oo,crack:s.L.dmg});tag(c,'Old building, as built',statusOf(s.L),stressOf(s.L,40));});
+   half(c,1,()=>{
+     ground(c,G.x);base();const S=s.R,oo={...o,x:HW/2+G.x,u:S.u};
+     if(S.broke)collapse(c,oo,S);else{
+       const P=frame(c,{...oo,crack:S.dmg,braces:true,braceCol:C.retro,braceW:3});
+       for(let i=0;i<4;i++)for(const fx of[-.5,.5]){seg(c,P(fx,i+.08),P(fx,i+.92),'#333',7);seg(c,P(fx,i+.08),P(fx,i+.92),C.retro,3);}
+       c.fillStyle=C.retro;for(const fx of[-.52,-.2,.2,.52]){const p=P(fx,0);c.beginPath();c.arc(p[0],GY-3,2.6,0,TAU);c.fill();}
+     }
+     tag(c,'Retrofitted',statusOf(S),stressOf(S,40),[['+ steel braces',C.retro],['+ wrapped columns',C.retro],['+ bolted to foundations',C.retro]]);
+   });
+ }},
+];
+
+/* ---------- build the page ---------- */
+const main=document.getElementById('cards');
+CARDS.forEach((cd,i)=>{
+  const el=document.createElement('section');el.className='card'+(cd.wide?' wide':'');
+  el.innerHTML=`<canvas></canvas><div class="txt"><h2><span>${String(i+1).padStart(2,'0')}</span>${cd.title}</h2><p><b>How it works:</b> ${cd.how}</p><p class="why"><b>Why it helps:</b> ${cd.why}</p></div>`;
+  main.appendChild(el);
+  cd.cv=el.querySelector('canvas');cd.ctx=cd.cv.getContext('2d');cd.visible=true;cd.st=cd.init();
+});
+const io=new IntersectionObserver(es=>es.forEach(e=>{const cd=CARDS.find(c=>c.cv===e.target);if(cd)cd.visible=e.isIntersecting;}));
+CARDS.forEach(cd=>io.observe(cd.cv));
+function sizeCanvases(){const d=window.devicePixelRatio||1;CARDS.forEach(cd=>{const w=Math.round(cd.cv.clientWidth*d);if(cd.cv.width!==w){cd.cv.width=w;cd.cv.height=Math.round(w*H/W);}});
+  const sc=document.getElementById('seis');sc.width=Math.round(sc.clientWidth*d);sc.height=Math.round(sc.clientHeight*d);}
+addEventListener('resize',sizeCanvases);sizeCanvases();
+
+/* ---------- controls ---------- */
+const $=id=>document.getElementById(id);
+const words=['gentle','gentle','moderate','moderate','strong','strong','very strong','very strong','violent','violent'];
+function setStr(){strength=+$('str').value;$('strv').textContent=strength+' · '+words[strength-1];}
+$('str').oninput=setStr;setStr();
+function restart(){T=0;acc=0;CARDS.forEach(cd=>cd.st=cd.init());seis.fill(0);playing=true;$('pause').textContent='Pause';}
+$('go').onclick=restart;
+$('pause').onclick=()=>{playing=!playing;$('pause').textContent=playing?'Pause':'Resume';};
+$('loop').onchange=e=>loop=e.target.checked;
+
+/* ---------- loop ---------- */
+const seis=new Array(300).fill(0);
+let last=performance.now(),acc=0;
+function drawSeis(){
+  const sc=$('seis'),c=sc.getContext('2d'),w=sc.width,h=sc.height;c.clearRect(0,0,w,h);
+  c.strokeStyle='rgba(127,127,127,.35)';c.lineWidth=1;c.beginPath();c.moveTo(0,h/2);c.lineTo(w,h/2);c.stroke();
+  c.beginPath();seis.forEach((v,i)=>{const x=i/(seis.length-1)*w,y=h/2-v/22*h*.45;i?c.lineTo(x,y):c.moveTo(x,y);});
+  c.strokeStyle=G.env>.02?C.danger:C.muted;c.lineWidth=1.5*(window.devicePixelRatio||1);c.stroke();
+}
+function frameLoop(now){
+  let dt=Math.min(.05,(now-last)/1000);last=now;
+  if(playing){
+    acc+=dt;
+    while(acc>=STEP){acc-=STEP;T+=STEP;updG();for(const cd of CARDS)cd.step(cd.st,STEP,G);}
+    seis.push(G.x);seis.shift();
+    if(loop&&T>CYCLE)restart();
+  }
+  const ph=$('phase');
+  if(T<QS){ph.textContent='Calm… quake coming';ph.className='';}
+  else if(T<QS+QL){ph.textContent='SHAKING!';ph.className='shake';}
+  else{ph.textContent=loop?`Aftermath · next quake in ${Math.max(0,Math.ceil(CYCLE-T))}s`:'Quake over. Press Start';ph.className='';}
+  for(const cd of CARDS){
+    if(!cd.visible)continue;
+    const c=cd.ctx,s=cd.cv.width/W;c.setTransform(s,0,0,s,0,0);c.clearRect(0,0,W,H);
+    cd.draw(c,cd.st,G);
+    c.fillStyle='rgba(127,127,127,.5)';c.fillRect(HW-1,0,2,H);
+  }
+  drawSeis();
+  requestAnimationFrame(frameLoop);
+}
+requestAnimationFrame(frameLoop);
+</script>
+</body>
+</html>
